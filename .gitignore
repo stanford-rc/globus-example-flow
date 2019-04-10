@@ -1,0 +1,6 @@
+# Ignore editor temp files
+.swp
+*~
+
+# Ignore SLURM output files
+slurm-*

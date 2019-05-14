@@ -113,6 +113,10 @@ COMPUTE_OUTPUT_GLOBUS_PATH="${COMPUTE_ENDPOINT}:${COMPUTE_OUTPUT_DIR}"
 INPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_inputjob"
 OUTPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_outputjob"
 
+# Touch the input and output job ID files, so we have something to delete.
+touch ${INPUT_JOB_ID}
+touch ${OUTPUT_JOB_ID}
+
 # Make a directory in non-scratch space to hold results.
 RESULTS_DIR="${NON_SCRATCH_PATH}/${RANDOM_NUMBER}"
 mkdir ${RESULTS_DIR}

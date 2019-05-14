@@ -24,7 +24,7 @@ DEST_DIR='~'
 # Where is the compute?
 # (In the example, the compute endpoint is 6881ae2e-db26-11e5-9772-22000b9da45e)
 # (That is the UUID of Sherlock's endpoint)
-SHERLOCK_ENDPOINT='6881ae2e-db26-11e5-9772-22000b9da45e'
+COMPUTE_ENDPOINT='6881ae2e-db26-11e5-9772-22000b9da45e'
 
 # Where is scratch space on the compute?
 # (On Sherlock, this is in the personal scratch space)
@@ -96,22 +96,22 @@ done
 
 # Make a directory in scratch space to hold work.
 RANDOM_NUMBER=$RANDOM
-SHERLOCK_INPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_input
-SHERLOCK_OUTPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_output
-mkdir ${SHERLOCK_INPUT_DIR}
-mkdir ${SHERLOCK_OUTPUT_DIR}
-echo "Using directory ${SHERLOCK_INPUT_DIR} for input"
-echo "Using directory ${SHERLOCK_OUTPUT_DIR} for output"
+COMPUTE_INPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_input
+COMPUTE_OUTPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_output
+mkdir ${COMPUTE_INPUT_DIR}
+mkdir ${COMPUTE_OUTPUT_DIR}
+echo "Using directory ${COMPUTE_INPUT_DIR} to temporarily hold source data"
+echo "Using directory ${COMPUTE_OUTPUT_DIR} to temporarily hold results"
 
-# Get the Globus paths for Sherlock
-SHERLOCK_INPUT_GLOBUS_PATH="${SHERLOCK_ENDPOINT}:${SHERLOCK_INPUT_DIR}"
-SHERLOCK_OUTPUT_GLOBUS_PATH="${SHERLOCK_ENDPOINT}:${SHERLOCK_OUTPUT_DIR}"
+# Get the Globus paths for the compute
+COMPUTE_INPUT_GLOBUS_PATH="${COMPUTE_ENDPOINT}:${COMPUTE_INPUT_DIR}"
+COMPUTE_OUTPUT_GLOBUS_PATH="${COMPUTE_ENDPOINT}:${COMPUTE_OUTPUT_DIR}"
 INPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_inputjob"
 OUTPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_outputjob"
 
 # Let's begin by transferring data
-echo 'Starting data transfer to Sherlock…'
-output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${SHERLOCK_INPUT_GLOBUS_PATH} \
+echo 'Starting data transfer to compute…'
+output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${COMPUTE_INPUT_GLOBUS_PATH} \
     --recursive --notify off --label "Transfer for ${RANDOM_NUMBER}" \
     --jmespath 'task_id' --format=UNIX \
     2>&1 1>${INPUT_JOB_ID})
@@ -138,7 +138,7 @@ do_cleanup() {
     globus task cancel $(cat ${INPUT_JOB_ID})
     globus task wait $(cat ${INPUT_JOB_ID})
     echo "Cleaning up scratch space…"
-    rm -r ${INPUT_JOB_ID} ${SHERLOCK_INPUT_DIR} ${SHERLOCK_OUTPUT_DIR}
+    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR}
     return
 }
 
@@ -175,7 +175,7 @@ echo " Monitor transfer in: ${output}"
 # JOB: Work on data
 output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} work" \
     --parsable --dependency afterok:${jobid[-1]} \
-    do_work.sh ${SHERLOCK_INPUT_DIR} ${SHERLOCK_OUTPUT_DIR} 2>&1)
+    do_work.sh ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} 2>&1)
 output_code=$?
 if [ $output_code -ne 0 ]; then
     echo 'ERROR scheduling work'
@@ -188,8 +188,8 @@ echo "        Work on data: ${output}"
 
 # JOB: Initiate transfer out
 output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} initiate transfer out" \
-    --parsable --dependency afterok:${jobid[-1]} \
-    do_transfer.sh ${SHERLOCK_OUTPUT_GLOBUS_PATH} ${DEST_GLOBUS_PATH} ${OUTPUT_JOB_ID} 2>&1)
+    --parsable --dependency afterok:${work_jobid} \
+    do_transfer.sh ${COMPUTE_OUTPUT_GLOBUS_PATH} ${DEST_GLOBUS_PATH} ${OUTPUT_JOB_ID} 2>&1)
 output_code=$?
 if [ $output_code -ne 0 ]; then
     echo 'ERROR scheduling transfer out'
@@ -216,8 +216,8 @@ echo "Monitor transfer out: ${output}"
 
 # JOB: Clean up $SCRATCH
 output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} cleanup" \
-    --parsable --dependency afterok:${jobid[-1]} \
-    --wrap "/bin/rm -r ${INPUT_JOB_ID} ${OUTPUT_JOB_ID} ${SHERLOCK_INPUT_DIR} ${SHERLOCK_OUTPUT_DIR}" \
+    --parsable --dependency afterok:${jobid[-1]},afterok:${copy_jobid} \
+    --wrap "/bin/rm -r ${INPUT_JOB_ID} ${OUTPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR}" \
     2>&1)
 output_code=$?
 if [ $output_code -ne 0 ]; then
@@ -233,4 +233,5 @@ echo "    Clean up scratch: ${output}"
 # There is nothing to clean up.  Although we did make some stuff in the
 # $SCRATCH_PATH, our last job should clean all those up!
 echo 'Work submitted!'
+echo 'NOTE: If something goes weird after this point, you will need to clean up the scratch directories yourself.'
 exit 0

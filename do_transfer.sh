@@ -3,10 +3,15 @@
 # Copyright © 2019 The Board of Trustees of the Leland Stanford Junior
 # University.  Licensed under the MIT License; see the LICENSE file for details.
 
+# This is a simple, single-threaded program.  We don't need many resources.
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
+
+# The transfer will either submit fairly quickly, or die fairly quickly.
 #SBATCH --time=0:10:0
+
+# Only email the user if we completely fail.
 #SBATCH --mail-type=FAIL
 
 # Load the Globus CLI module.  There are two verisons, one for Python 2.7 and

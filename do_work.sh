@@ -3,10 +3,16 @@
 # Copyright © 2019 The Board of Trustees of the Leland Stanford Junior
 # University.  Licensed under the MIT License; see the LICENSE file for details.
 
+# Our work is single-threaded, and doesn't need many resources.
+# Your work will, of course, need more!
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
+
+# The checksum generation really should not take more than an hour.
 #SBATCH --time=1:00:0
+
+# Only email the user if we completely fail.
 #SBATCH --mail-type=FAIL
 
 # We should only have two arguments

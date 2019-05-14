@@ -3,13 +3,21 @@
 # Copyright © 2019 The Board of Trustees of the Leland Stanford Junior
 # University.  Licensed under the MIT License; see the LICENSE file for details.
 
+# This is a simple, single-threaded program.  We don't need many resources.
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
+
+# Only run for a little bit.  If we run out of time before the transfer is
+# done, we will requeue ourselves.
 #SBATCH --time=0:15:0
-#SBATCH --mail-type=FAIL
 #SBATCH --signal=B:SIGUSR1
+
+# We do support preemption.  If we are preempted, we should be requeued. 
 #SBATCH --requeue
+
+# Only email the user if we completely fail.
+#SBATCH --mail-type=FAIL
 
 # Load the Globus CLI module.  There are two verisons, one for Python 2.7 and
 # one for Python 3.6.  Pick the one depending on which Python you want loaded.

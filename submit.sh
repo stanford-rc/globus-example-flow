@@ -140,7 +140,7 @@ do_cleanup() {
     globus task cancel $(cat ${INPUT_JOB_ID})
     globus task wait $(cat ${INPUT_JOB_ID})
     echo "Cleaning up scratch and non-scratch space…"
-    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} ${RESULTS_DIR}
+    rm -r ${INPUT_JOB_ID} ${OUTPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} ${RESULTS_DIR}
     return
 }
 

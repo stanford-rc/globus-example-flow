@@ -135,10 +135,12 @@ fi
 
 # Time to submit our jobs!
 
+# We will track job IDs in an array.
+declare -a jobid
+
 # If a job fails to submit, cancel all the ones we already scheduled.
 # Jobs with ID number 0 are not scheduled.
 # We walk the array in reverse, killing the last job first, and so on.
-declare -a jobid
 do_cleanup() {
     for (( i=${#jobid[@]} ; i>=0 ; i-- )); do
         job=${jobid[i]}

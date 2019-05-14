@@ -119,6 +119,8 @@ output_code=$?
 if [ $output_code -ne 0 ]; then
     echo 'ERROR: The transfer of data in could not be started.'
     echo $output
+    echo "Cleaning up scratch space…"
+    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR}
     exit 1
 fi
 

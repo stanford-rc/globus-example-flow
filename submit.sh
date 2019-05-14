@@ -131,14 +131,20 @@ declare -a jobid
 # Jobs with ID number 0 are not scheduled.
 # We walk the array in reverse, killing the last job first, and so on.
 do_cleanup() {
-    for (( i=${#jobid[@]} ; i>=0 ; i-- )); do
-        job=${jobid[i]}
-        echo "Cancelling SLURM job ${job}…"
-        scancel ${job}
-    done
-    echo "Cancelling Globus transfer…"
-    globus task cancel $(cat ${INPUT_JOB_ID})
-    globus task wait $(cat ${INPUT_JOB_ID})
+    # Only cancel SLURM jobs if we have entries in the job ID array.
+    if [ ${#jobid[@]} -gt 0 ]; then
+        for (( i=${#jobid[@]} ; i>=0 ; i-- )); do
+            job=${jobid[i]}
+            echo "Cancelling SLURM job ${job}…"
+            scancel ${job}
+        done
+    fi
+    # Only cancel the transfer in if we have a transfer UUID in the file.
+    if [ ! -z $(cat ${INPUT_JOB_ID}) ]; then
+        echo "Cancelling Globus transfer…"
+        globus task cancel $(cat ${INPUT_JOB_ID})
+        globus task wait $(cat ${INPUT_JOB_ID})
+    fi
     echo "Cleaning up scratch and non-scratch space…"
     rm -r ${INPUT_JOB_ID} ${OUTPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} ${RESULTS_DIR}
     return

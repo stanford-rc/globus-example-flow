@@ -118,22 +118,7 @@ RESULTS_DIR="${NON_SCRATCH_PATH}/${RANDOM_NUMBER}"
 mkdir ${RESULTS_DIR}
 echo "Using directory ${RESULTS_DIR} to store results locally"
 
-# Let's begin by transferring data
-echo 'Starting data transfer to compute…'
-output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${COMPUTE_INPUT_GLOBUS_PATH} \
-    --recursive --notify off --label "Transfer for ${RANDOM_NUMBER}" \
-    --jmespath 'task_id' --format=UNIX \
-    2>&1 1>${INPUT_JOB_ID})
-output_code=$?
-if [ $output_code -ne 0 ]; then
-    echo 'ERROR: The transfer of data in could not be started.'
-    echo $output
-    echo "Cleaning up scratch space…"
-    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR}
-    exit 1
-fi
-
-# Time to submit our jobs!
+# Time to actually do some work!
 
 # We will track job IDs in an array.
 declare -a jobid
@@ -154,6 +139,20 @@ do_cleanup() {
     rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} ${RESULTS_DIR}
     return
 }
+
+# Let's begin by transferring data
+echo 'Starting data transfer to compute…'
+output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${COMPUTE_INPUT_GLOBUS_PATH} \
+    --recursive --notify off --label "Transfer for ${RANDOM_NUMBER}" \
+    --jmespath 'task_id' --format=UNIX \
+    2>&1 1>${INPUT_JOB_ID})
+output_code=$?
+if [ $output_code -ne 0 ]; then
+    echo 'ERROR: The transfer of data in could not be started.'
+    echo $output
+    do_cleanup
+    exit 1
+fi
 
 echo 'Submitting SLURM jobs…'
 echo 'JOB ID NUMBERS:'

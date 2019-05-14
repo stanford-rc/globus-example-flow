@@ -150,26 +150,37 @@ do_cleanup() {
     echo "Cancelling Globus transfer…"
     globus task cancel $(cat ${INPUT_JOB_ID})
     globus task wait $(cat ${INPUT_JOB_ID})
-    echo "Cleaning up scratch space…"
-    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR}
+    echo "Cleaning up scratch and non-scratch space…"
+    rm -r ${INPUT_JOB_ID} ${COMPUTE_INPUT_DIR} ${COMPUTE_OUTPUT_DIR} ${RESULTS_DIR}
     return
 }
 
 echo 'Submitting SLURM jobs…'
 echo 'JOB ID NUMBERS:'
 
-# Each job has the same set of shell script:
+# Remember, this is a demonstration pipeline  And so, we will be making a
+# separate SLURM job for each step.
+# The transfer has already been submitted, so we will now do the following:
+# 1) Wait for the transfer to complete.
+# 2) Do the compute work.
+# 3a) Copy the result to local storage (something more permanent than scratch).
+# 3b) Initiate a transfer of the results.
+# 4) Wait for the transfer to complete.
+# 5) Delete the stuff we have in scratch.
+
+# Each of the above steps is handled the same way, in the code below:
 # * Run the command, sending all output to $output, and capture $output_code
 #   Each job has a semi-descriptive name.
-#   The first job has no dependency; all other jobs depend on the last job in
-#   the job ID array.
-#   When successful, only output the job ID number; nothing else.
-#   Different jobs can be placed in different partitions; all other sbatch
-#   parameters are stored in the sbatch script itself.
+#   The first job has no dependency; all other jobs depend on a previous job.
+#   When successful, output the job ID number to the user.
+#   Most of the normal sbatch parameters are stored in the sbatch script.
+#   But we do do specify the partition on the command-line.
 # * If the `sbatch` failed, clean up the already-scheduled jobs.
 #   $output will contain error text, so output it.
 # * If the `sbatch` is successful, then $output will contain a job ID.
 #   Push that to the end of the job ID list.
+#   For some jobs, we need to use the job ID number in a later step; those
+#   will have a copy of their job ID stored in a separate variable.
 
 # JOB: Monitor transfer of data in
 output=$(sbatch --partition ${WAIT_PARTITION} --job-name "${RANDOM_NUMBER} monitor transfer in" \

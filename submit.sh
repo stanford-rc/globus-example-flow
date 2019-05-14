@@ -30,6 +30,10 @@ COMPUTE_ENDPOINT='6881ae2e-db26-11e5-9772-22000b9da45e'
 # (On Sherlock, this is in the personal scratch space)
 SCRATCH_PATH=${SCRATCH}
 
+# Where is non-scratch space on the compute?
+# (On Sherlock, this is a directory inside the "PI home" space)
+NON_SCRATCH_PATH=${GROUP_HOME}/akkornel
+
 # When doing preemptable tasks, what partition do we use?
 # (On Sherlock, this would either be "owners" or "normal)
 WAIT_PARTITION=owners
@@ -109,6 +113,11 @@ COMPUTE_OUTPUT_GLOBUS_PATH="${COMPUTE_ENDPOINT}:${COMPUTE_OUTPUT_DIR}"
 INPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_inputjob"
 OUTPUT_JOB_ID="${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_outputjob"
 
+# Make a directory in non-scratch space to hold results.
+RESULTS_DIR="${NON_SCRATCH_PATH}/${RANDOM_NUMBER}"
+mkdir ${RESULTS_DIR}
+echo "Using directory ${RESULTS_DIR} to store results locally"
+
 # Let's begin by transferring data
 echo 'Starting data transfer to compute…'
 output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${COMPUTE_INPUT_GLOBUS_PATH} \
@@ -186,7 +195,23 @@ if [ $output_code -ne 0 ]; then
     exit 1
 fi
 jobid+=($output)
+work_jobid=$output
 echo "        Work on data: ${output}"
+
+# JOB: Copy results to local storage
+output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} copy results out" \
+    --parsable --dependency afterok:${work_jobid} \
+    --wrap "/bin/cp -r ${COMPUTE_OUTPUT_DIR}/ ${RESULTS_DIR}" 2>&1)
+output_code=$?
+if [ $output_code -ne 0 ]; then
+    echo 'ERROR scheduling copy out'
+    echo $output
+    do_cleanup
+    exit 1
+fi
+jobid+=($output)
+copy_jobid=$output
+echo "        Copy results: ${output}"
 
 # JOB: Initiate transfer out
 output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} initiate transfer out" \

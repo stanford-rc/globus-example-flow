@@ -75,7 +75,7 @@ for endpoint_id in $SOURCE_ENDPOINT $DEST_ENDPOINT $SHERLOCK_ENDPOINT; do
         output=$(globus endpoint is-activated ${endpoint_id} 2>&1)
         output_code=$?
     done
-    echo "Endpoint ${endpoint_id} is ready."
+    echo "Endpoint ${endpoint_id} is already activated."
 done
 
 # Are the source and destination paths valid?

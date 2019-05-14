@@ -69,7 +69,7 @@ for endpoint_id in $SOURCE_ENDPOINT $DEST_ENDPOINT $SHERLOCK_ENDPOINT; do
             echo "WARNING: Endpoint ${endpoint_id} is not ready."
             echo 'Please go to this URL to activate your endpoint:'
             echo "https://app.globus.org/file-manager?origin_id=${endpoint_id}"
-            echo "<< Press RETURN to check again >>"
+            echo "<< Press RETURN to check again, or Control-C to exit. >>"
             read x
         fi
         output=$(globus endpoint is-activated ${endpoint_id} 2>&1)

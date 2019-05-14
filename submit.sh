@@ -10,23 +10,32 @@
 module load system py-globus-cli/1.9.0_py36
 
 # Where is our source data?
-SOURCE_ENDPOINT='db57ddde-6d04-11e5-ba46-22000b92c6ec'
+# (In the example, the source endpoint is d8eb36b6-6d04-11e5-ba46-22000b92c6ec)
+# (That is the UUID of the ESnet Read-Only Test DTN at CERN)
+SOURCE_ENDPOINT='d8eb36b6-6d04-11e5-ba46-22000b92c6ec'
 SOURCE_DIR='/data1/50GB-in-medium-files/'
 
 # Where is our destination?
-DEST_ENDPOINT='deddc130-5283-11e8-9060-0a6d4e044368'
+# (In the example, the destination endpoint is dd2cd454-7369-11e9-8e59-029d279f7e24)
+# (That is Karl's work laptop)
+DEST_ENDPOINT='dd2cd454-7369-11e9-8e59-029d279f7e24'
 DEST_DIR='~'
 
-# Where is Sherlock?
+# Where is the compute?
+# (In the example, the compute endpoint is 6881ae2e-db26-11e5-9772-22000b9da45e)
+# (That is the UUID of Sherlock's endpoint)
 SHERLOCK_ENDPOINT='6881ae2e-db26-11e5-9772-22000b9da45e'
 
-# Where is scratch?
+# Where is scratch space on the compute?
+# (On Sherlock, this is in the personal scratch space)
 SCRATCH_PATH=${SCRATCH}
 
-# When waiting for a transfer, what partition do we use?
+# When doing preemptable tasks, what partition do we use?
+# (On Sherlock, this would either be "owners" or "normal)
 WAIT_PARTITION=owners
 
 # When doing work, what partition do we use?
+# (On Sherlock, this could be a PI partition, or "owners", or "normal")
 WORK_PARTITION=owners
 
 ##

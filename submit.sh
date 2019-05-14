@@ -80,14 +80,18 @@ done
 
 # Are the source and destination paths valid?
 for path in $SOURCE_GLOBUS_PATH $DEST_GLOBUS_PATH; do
-    output=$(globus ls ${path})
+    output=$(globus ls ${path} 2>&1 )
     output_code=$?
     if [ $output_code -ne 0 ]; then
-        echo "ERROR: The path ${path} is not valid, or the endpoint is not connected."
-        echo ${outuput}
-        exit 1
+        echo "WARNING: The path ${path} is not ready"
+        echo "The path may be invalid, or the endpoint might not be connected."
+        echo "Here is what the Globus CLI reported:"
+        echo ${output}
+        echo "<< Press RETURN to continue execution, or Control-C to exit. >>"
+        read x
+    else
+        echo "Path ${path} is ready"
     fi
-    echo "Path ${path} is ready"
 done
 
 # Make a directory in scratch space to hold work.

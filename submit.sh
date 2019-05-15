@@ -41,7 +41,7 @@ WAIT_PARTITION=owners
 
 # When doing work, what partition do we use?
 # (On Sherlock, this could be a PI partition, or "owners", or "normal")
-WORK_PARTITION=owners
+WORK_PARTITION=normal
 
 ##
 # BEGIN!

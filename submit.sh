@@ -3,7 +3,8 @@
 # Copyright © 2019 The Board of Trustees of the Leland Stanford Junior
 # University.  Licensed under the MIT License; see the LICENSE file for details.
 
-# Load the Globus CLI module.  There are two verisons, one for Python 2.7 and
+# Do any work needed to make the Globus CLI available.  For Sherlock, we
+# load the Globus CLI module.  There are two verisons, one for Python 2.7 and
 # one for Python 3.6.  Pick the one depending on which Python you want loaded.
 # * py-globus-cli/1.9.0_py27
 # * py-globus-cli/1.9.0_py36

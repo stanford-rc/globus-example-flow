@@ -105,6 +105,7 @@ COMPUTE_INPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_input
 COMPUTE_OUTPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_output
 mkdir ${COMPUTE_INPUT_DIR}
 mkdir ${COMPUTE_OUTPUT_DIR}
+echo "All of the jobs and directories will include the random number ${RANDOM_NUMBER}"
 echo "Using directory ${COMPUTE_INPUT_DIR} to temporarily hold source data"
 echo "Using directory ${COMPUTE_OUTPUT_DIR} to temporarily hold results"
 

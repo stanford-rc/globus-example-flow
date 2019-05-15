@@ -40,13 +40,15 @@ if [ ! -f ${transfer_id_file} ]; then
 fi
 transfer_id=$(cat ${transfer_id_file})
 
-# Check that our transfer ID is valid
-output=$(globus task show ${transfer_id} 2>&1)
+# Check that our transfer ID is valid, and (if it is) capture the task status.
+output=$(globus task show --jmespath status ${transfer_id} 2>&1)
 output_code=$?
 if [ $output_code -ne 0 ]; then
     echo "ERROR!  The transfer ID ${transfer_id} is not valid."
     echo $output
     exit 1
+else
+    globus_task_status="${output}"
 fi
 
 # Set us up to requeue if we run out of time
@@ -66,10 +68,7 @@ trap 'do_requeue' SIGUSR1
 # (1) is the same exit code for HTTP/server failure.
 # So, we have to implement this ourselves.
 
-# Start by assuming that the task is "ACTIVE".
-# And yes, that's "ACTIVE" in double-quotes.  That's how we'll get it back from
-# the `globus task show` command.
-globus_task_status='"ACTIVE"'
+# We previously got the task status when we checked if we had a valid task ID.
 while [ $globus_task_status = '"ACTIVE"' ]; do
     # Wait for 30 seconds.  This is good to do at the start of the loop,
     # because the transfer was probably just submitted, and it's unlikely that

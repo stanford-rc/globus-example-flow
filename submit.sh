@@ -221,8 +221,8 @@ jobid+=($output)
 work_jobid=$output
 echo "        Work on data: ${output}"
 
-# JOB: Copy results to local storage
-output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} copy results out" \
+# JOB: Copy results to non-scratch storage
+output=$(sbatch --partition ${WORK_PARTITION} --job-name "${RANDOM_NUMBER} copy results to non-scratch storage" \
     --parsable --dependency afterok:${work_jobid} \
     --wrap "/bin/cp -r ${COMPUTE_OUTPUT_DIR}/ ${RESULTS_DIR}" 2>&1)
 output_code=$?

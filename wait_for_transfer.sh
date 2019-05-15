@@ -17,7 +17,7 @@
 #SBATCH --requeue
 
 # Only email the user if we completely fail.
-#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=END,FAIL
 
 # Do any work needed to make the Globus CLI available.  For Sherlock, we
 # load the Globus CLI module.  There are two verisons, one for Python 2.7 and

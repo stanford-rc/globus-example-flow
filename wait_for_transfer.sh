@@ -56,15 +56,44 @@ do_requeue() {
 }
 trap 'do_requeue' SIGUSR1
 
-# Wait for the transfer to complete or fail
-output=$(globus task wait ${transfer_id} 2>&1)
-output_code=$?
+# Wait for the transfer to complete or fail.
 
-# Did we exit?  Was it OK?
-if [ $output_code -eq 0 ]; then
+# NOTE: We cannot use `globus task wait` here.  The reason is annoying.
+# Even though `globus task wait` will happily wait forever, we cannot wait
+# indefinitely.  In order for bash to process signals, we need to have `globus
+# task wait` time out.  Then, assuming there are no requeue signals to process,
+# we can go right back to running the command.  But, the exit code for timeout
+# (1) is the same exit code for HTTP/server failure.
+# So, we have to implement this ourselves.
+
+# Start by assuming that the task is "ACTIVE".
+# And yes, that's "ACTIVE" in double-quotes.  That's how we'll get it back from
+# the `globus task show` command.
+globus_task_status='"ACTIVE"'
+while [ $globus_task_status = '"ACTIVE"' ]; do
+    # Wait for 30 seconds.  This is good to do at the start of the loop,
+    # because the transfer was probably just submitted, and it's unlikely that
+    # it completed so quickly.
+    sleep 30
+
+    # Pull the status of the task.
+    globus_task_status=$(globus task show --jmespath status ${transfer_id} 2>&1)
+    output_code=$?
+    
+    # If the output code is non-zero, say something and exit.
+    if [ $output_code -ne 0 ]; then
+        echo 'ERROR!  The globus task show command failed.'
+        echo "${globus_task_status}"
+        exit 1
+    fi
+
+    # If the output code is zero, we'll let the loop decide what to do!
+done
+
+# Now check the status.  If it's "SUCCEEDED", then we're good!
+if [ $globus_task_status = '"SUCCEEDED"' ]; then
     exit 0
-# Any other result is a failure
-else
-    echo $output
-    exit 1
 fi
+
+echo "Transfer failed.  ${globus_task_status}"
+exit 1

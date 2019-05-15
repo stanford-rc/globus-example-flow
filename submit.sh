@@ -154,7 +154,7 @@ do_cleanup() {
 # Let's begin by transferring data
 echo 'Starting data transfer to compute…'
 output=$(globus transfer ${SOURCE_GLOBUS_PATH} ${COMPUTE_INPUT_GLOBUS_PATH} \
-    --recursive --notify off --label "Transfer for ${RANDOM_NUMBER}" \
+    --recursive --notify off --label "${RANDOM_NUMBER} Transfer data to compute" \
     --jmespath 'task_id' --format=UNIX \
     2>&1 1>${INPUT_JOB_ID})
 output_code=$?

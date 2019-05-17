@@ -20,7 +20,7 @@ code in these scripts could easily be adapted to work elsewhere.
 
 The scripts assume that you have the following environment:
 
-!(A diagram which shows three major components: A desktop system, an amorphous pool of remote data, and a compute environment.  The compute environment has four pieces: A block of scratch space, a block of user space, a block of compute, and a block of login.  Bi-directional arrows connect the compute to the scratch space, and the compute to the user space.  One-way arrows run from the remote data pool to the scratch space, and from the scratch space to the desktop system.  The login block is not connected to anything.)[docs/environment.png]
+![A diagram which shows three major components: A desktop system, an amorphous pool of remote data, and a compute environment.  The compute environment has four pieces: A block of scratch space, a block of user space, a block of compute, and a block of login.  Bi-directional arrows connect the compute to the scratch space, and the compute to the user space.  One-way arrows run from the remote data pool to the scratch space, and from the scratch space to the desktop system.  The login block is not connected to anything.](docs/environment.png?raw=true)
 
 The diagram depicts a common compute environment: There are nodes meant for
 users to log in, and there are nodes meant for running batch jobs.  SLURM is

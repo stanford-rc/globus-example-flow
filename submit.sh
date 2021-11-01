@@ -20,7 +20,7 @@ SOURCE_DIR='/data1/50GB-in-medium-files/'
 # (In the example, the destination endpoint is dd2cd454-7369-11e9-8e59-029d279f7e24)
 # (That is Karl's work laptop)
 DEST_ENDPOINT='dd2cd454-7369-11e9-8e59-029d279f7e24'
-DEST_DIR='~'
+DEST_DIR='~/Downloads/Demo'
 
 # Where is the compute?
 # (In the example, the compute endpoint is 6881ae2e-db26-11e5-9772-22000b9da45e)

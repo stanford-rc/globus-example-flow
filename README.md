@@ -27,9 +27,8 @@ users to log in, and there are nodes meant for running batch jobs.  SLURM is
 used as the job manager.  There is a pool of fast, temporary storage (scratch
 space); and a pool of slower, longer-term storage.
 
-Outside of the compute environment, there is a desktop (which you are using,
-and which will be the destination for your results), and a pool of remote data
-(the source data).
+Outside of the compute environment, there are two paths on a remote data store,
+one path used for source data and one path to store the results.
 
 The scripts in this repository implement the following pipeline (the numbers
 match the numbers in the diagram):
@@ -39,9 +38,9 @@ match the numbers in the diagram):
 
 2. _Do work._
 
-3. _Copy results to the desktop._  This is also done using Globus Transfer,
-   from the compute environment's endpoint to a Globus Connect Personal
-   endpoint running on your desktop.
+3. _Copy results to the Globus endpoint._  This is also done using Globus
+   Transfer, from the compute environment's endpoint to the endpoint used for
+   results storage.
 
 4. _Copy results to local storage._  This is done using a regular copy
    operation.  It is an optional step, and is done only as a backup.
@@ -90,7 +89,9 @@ progress of the pipeline.
 To support multiple executions of the pipeline, `run.sh` will generate a random
 number that will be used in all of the SLURM job names and in all directory
 names.  After completing initial validation, `run.sh` will tell you the random
-number, and the paths used for temporary data storage.
+number, and the paths used for temporary data storage.  A directory will also
+be created on the results-storage endpoint, to keep the results from this run
+separate from other runs.
 
 # Parameters and Customization
 
@@ -115,15 +116,13 @@ the defaults used in this repository:
   and path to an output file.  As outputs are being written to a single file,
   the checksums are generated serially.
 
-* The destination desktop is [Karl](https://github.com/akkornel)'s work laptop.
-
 The above defaults should work for any Sherlock user, except you will need to
 change the destination to be your own desktop (or another endpoint where you
 have write access).
 
 # Copyright, Licensing, and Contributions
 
-The contents of this repository are © 2019 The Board of Trustees of the Leland
+The contents of this repository are © 2021 The Board of Trustees of the Leland
 Stanford Jr. University.  It is made available under the [MIT License](LICENSE).
 
 Diagrams were created with [Monodraw](https://monodraw.helftone.com).

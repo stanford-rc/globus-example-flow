@@ -11,16 +11,14 @@
 module load system py-globus-cli/1.9.0_py36
 
 # Where is our source data?
-# (In the example, the source endpoint is d8eb36b6-6d04-11e5-ba46-22000b92c6ec)
-# (That is the UUID of the ESnet Read-Only Test DTN at CERN)
-SOURCE_ENDPOINT='d8eb36b6-6d04-11e5-ba46-22000b92c6ec'
-SOURCE_DIR='/data1/50GB-in-medium-files/'
+# This is the Chichilnisky Lab endpoint
+SOURCE_ENDPOINT='2e35965a-72b2-11e9-b7f8-0a37f382de32'
+SOURCE_DIR='/Volumes/Lab/Scratch/Globus_Demo/Inputs'
 
 # Where is our destination?
-# (In the example, the destination endpoint is dd2cd454-7369-11e9-8e59-029d279f7e24)
-# (That is Karl's work laptop)
-DEST_ENDPOINT='dd2cd454-7369-11e9-8e59-029d279f7e24'
-DEST_DIR='~/Downloads/Demo'
+# Use the same endpoint for destination as source
+DEST_ENDPOINT=${SOURCE_ENDPOINT}
+DEST_DIR='/Volumes/Lab/Scratch/Globus_Demo/Outputs'
 
 # Where is the compute?
 # (In the example, the compute endpoint is 6881ae2e-db26-11e5-9772-22000b9da45e)
@@ -33,23 +31,29 @@ SCRATCH_PATH=${SCRATCH}
 
 # Where is non-scratch space on the compute?
 # (On Sherlock, this is a directory inside the "PI home" space)
-NON_SCRATCH_PATH=${GROUP_HOME}/akkornel
+# NOTE: This assumes that each user has a directory in the group space, where
+# the directory name is the user's username on Sherlock.
+NON_SCRATCH_PATH=${GROUP_HOME}/${USER}
 
 # When doing preemptable tasks, what partition do we use?
 # (On Sherlock, this would either be "owners" or "normal)
-WAIT_PARTITION=dev
+WAIT_PARTITION=normal
 
 # When doing work, what partition do we use?
 # (On Sherlock, this could be a PI partition, or "owners", or "normal")
-WORK_PARTITION=dev
+WORK_PARTITION=normal
 
 ##
 # BEGIN!
 ##
 
+# Get a random number, to help with uniqueness.
+RANDOM_NUMBER=$RANDOM
+
 # Construct Globus paths, from the endpoint UUID and directory.
 SOURCE_GLOBUS_PATH="${SOURCE_ENDPOINT}:${SOURCE_DIR}"
-DEST_GLOBUS_PATH="${DEST_ENDPOINT}:${DEST_DIR}"
+PARENT_DEST_GLOBUS_PATH="${DEST_ENDPOINT}:${DEST_DIR}"
+DEST_GLOBUS_PATH="${DEST_ENDPOINT}:${DEST_DIR}/${USER}_${RANDOM_NUMBER}"
 
 # Are we logged in to Globus?
 output=$(globus whoami >/dev/null 2>&1)
@@ -84,7 +88,7 @@ for endpoint_id in $SOURCE_ENDPOINT $DEST_ENDPOINT $SHERLOCK_ENDPOINT; do
 done
 
 # Are the source and destination paths valid?
-for path in $SOURCE_GLOBUS_PATH $DEST_GLOBUS_PATH; do
+for path in $SOURCE_GLOBUS_PATH $PARENT_DEST_GLOBUS_PATH; do
     output=$(globus ls ${path} 2>&1 )
     output_code=$?
     if [ $output_code -ne 0 ]; then
@@ -99,8 +103,21 @@ for path in $SOURCE_GLOBUS_PATH $DEST_GLOBUS_PATH; do
     fi
 done
 
+# Create the results-storage directory on the remote endpoint.
+output=$(globus mkdir ${DEST_GLOBUS_PATH} 2>&1 )
+output_code=$?
+if [ $output_code -ne 0 ]; then
+    echo "WARNING: Could not create results-storage directory ${DEST_GLOBUS_PATH}"
+    echo "Here is what the Globus CLI reported:"
+    echo ${output}
+    echo "<< Press RETURN to continue execution, or Control-C to exit. >>"
+    read x
+else
+    echo "Created remote results-storage directory ${DEST_GLOBUS_PATH}"
+fi
+
+
 # Make a directory in scratch space to hold work.
-RANDOM_NUMBER=$RANDOM
 COMPUTE_INPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_input
 COMPUTE_OUTPUT_DIR=${SCRATCH_PATH}/${USER}_${RANDOM_NUMBER}_output
 mkdir ${COMPUTE_INPUT_DIR}

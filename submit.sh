@@ -37,11 +37,11 @@ NON_SCRATCH_PATH=${GROUP_HOME}/akkornel
 
 # When doing preemptable tasks, what partition do we use?
 # (On Sherlock, this would either be "owners" or "normal)
-WAIT_PARTITION=owners
+WAIT_PARTITION=dev
 
 # When doing work, what partition do we use?
 # (On Sherlock, this could be a PI partition, or "owners", or "normal")
-WORK_PARTITION=normal
+WORK_PARTITION=dev
 
 ##
 # BEGIN!

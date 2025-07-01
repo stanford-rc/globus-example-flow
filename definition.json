@@ -1,0 +1,258 @@
+{
+  "Comment": "This Flow Definition is part of A Example Pipeline for Unattended Pipelines, Data Transfer, and Computation Using Globus.  https://github.com/stanford-rc/globus-example-flow/tree/flow",
+  "StartAt": "Compute_Paths",
+  "States": {
+    "Compute_Paths": {
+      "Comment": "We need a unique path on the compute environment, and on the destination.  What should those paths be?",
+      "Type": "ExpressionEval",
+      "Parameters": {
+        "compute_path.=": "`$.cluster_temp.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id`",
+        "compute_input_path.=": "`$.cluster_temp.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id` + '/input'",
+        "compute_output_path.=": "`$.cluster_temp.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id` + '/output'",
+        "function_in_dir.=": "'/labs' + `$.cluster_temp.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id` + '/input'",
+        "function_out_dir.=": "'/labs' + `$.cluster_temp.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id` + '/output'",
+        "destination_path.=": "`$.destination.path` + '/' + `$.path_prefix` + '-' + `$._context.run_id`"
+      },
+      "ResultPath": "$.Compute_Paths",
+      "Next": "MakeDir_Compute"
+    },
+    "MakeDir_Compute": {
+      "Comment": "On the compute environment, we need a path for inputs & a path for outputs, all under a parent path.  Make the parent path.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/mkdir",
+      "Parameters": {
+        "endpoint_id.$": "$.cluster_temp.id",
+        "path.$": "$.Compute_Paths.compute_path"
+      },
+      "ResultPath": "$.MakeDir_Compute",
+      "Next": "MakeDir_Compute_Input",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException"
+          ],
+          "Next": "End",
+          "ResultPath": "$.Error"
+        },
+        {
+          "ErrorEquals": [
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Compute",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "MakeDir_Compute_Input": {
+      "Comment": "On the compute environment, make the input path.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/mkdir",
+      "Parameters": {
+        "endpoint_id.$": "$.cluster_temp.id",
+        "path.$": "$.Compute_Paths.compute_input_path"
+      },
+      "ResultPath": "$.MakeDir_Compute_Input",
+      "Next": "MakeDir_Compute_Output",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException",
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Compute",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "MakeDir_Compute_Output": {
+      "Comment": "On the compute environment, make the output path.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/mkdir",
+      "Parameters": {
+        "endpoint_id.$": "$.cluster_temp.id",
+        "path.$": "$.Compute_Paths.compute_output_path"
+      },
+      "ResultPath": "$.MakeDir_Compute_Output",
+      "Next": "MakeDir_Results",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException",
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Compute",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "MakeDir_Results": {
+      "Comment": "Make the results path on the destination Collection.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/mkdir",
+      "Parameters": {
+        "endpoint_id.$": "$.destination.id",
+        "path.$": "$.Compute_Paths.destination_path"
+      },
+      "ResultPath": "$.MakeDir_Results",
+      "Next": "Copy_Inputs_To_Compute",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException"
+          ],
+          "Next": "Cleanup_Compute",
+          "ResultPath": "$.Error"
+        },
+        {
+          "ErrorEquals": [
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Results",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "Copy_Inputs_To_Compute": {
+      "Comment": "Copy inputs from the source Collection to the compute environment.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/transfer",
+      "Parameters": {
+        "source_endpoint.$": "$.source_data.id",
+        "destination_endpoint.$": "$.cluster_temp.id",
+        "DATA": [
+          {
+            "source_path.$": "$.source_data.path",
+            "destination_path.$": "$.Compute_Paths.compute_input_path"
+          }
+        ]
+      },
+      "ResultPath": "$.Copy_Inputs_To_Compute",
+      "Next": "Do_Compute",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException",
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Results",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "Do_Compute": {
+      "Comment": "Do the checksum calculation.",
+      "Type": "Action",
+      "ActionUrl": "https://compute.actions.globus.org/v3",
+      "Parameters": {
+        "endpoint_id.$": "$.cluster_compute_endpoint",
+        "tasks": [
+          {
+            "function_id.$": "$.function_id",
+            "kwargs": {
+              "in_dir.$": "$.Compute_Paths.function_in_dir",
+              "out_dir.$": "$.Compute_Paths.function_out_dir"
+            }
+          }
+        ]
+      },
+      "ResultPath": "$.Do_Compute",
+      "Next": "Copy_Results_To_Dest",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ActionUnableToRun",
+            "ActionFailedException",
+            "ActionTimeout"
+          ],
+          "Next": "Cleanup_Results",
+          "ResultPath": "$.Error"
+        }
+      ]
+    },
+    "Copy_Results_To_Dest": {
+      "Comment": "Copy outputs from the compute environment to the destination.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/transfer",
+      "Parameters": {
+        "source_endpoint.$": "$.cluster_temp.id",
+        "destination_endpoint.$": "$.destination.id",
+        "DATA": [
+          {
+            "source_path.$": "$.Compute_Paths.compute_output_path",
+            "destination_path.$": "$.Compute_Paths.destination_path"
+          }
+        ]
+      },
+      "ResultPath": "$.Copy_Results_To_Dest",
+      "Next": "Cleanup_Compute",
+      "ExceptionOnActionFailure": false
+    },
+    "Cleanup_Results": {
+      "Comment": "Delete the results directory on the destination.  NOTE: Only run when something failed.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/delete",
+      "Parameters": {
+        "endpoint.$": "$.destination.id",
+        "recursive": true,
+        "DATA": [
+          {
+            "path.$": "$.Compute_Paths.destination_path"
+          }
+        ]
+      },
+      "ResultPath": "$.Cleanup_Results",
+      "Next": "Cleanup_Compute",
+      "ExceptionOnActionFailure": false
+    },
+    "Cleanup_Compute": {
+      "Comment": "Clean up the temporary directory (input & output) on the compute environment.  NOTE: This is run both during the 'happy path', and when something failed.",
+      "Type": "Action",
+      "ActionUrl": "https://transfer.actions.globus.org/delete",
+      "Parameters": {
+        "endpoint.$": "$.cluster_temp.id",
+        "recursive": true,
+        "DATA": [
+          {
+            "path.$": "$.Compute_Paths.compute_path"
+          }
+        ]
+      },
+      "ResultPath": "$.Cleanup_Compute",
+      "Next": "End",
+      "ExceptionOnActionFailure": false
+    },
+    "End": {
+      "Comment": "All done!  Before we end, check if we had an exception.",
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Error",
+          "IsPresent": true,
+          "Next": "EndFailure"
+        },
+        {
+          "Variable": "$.Error",
+          "IsPresent": false,
+          "Next": "EndSuccess"
+        }
+      ],
+      "Default": "EndFailure"
+    },
+    "EndFailure": {
+      "Comment": "End the Flow with a failure state.",
+      "Type": "Fail",
+      "ErrorPath": "$.Error.Error",
+      "CausePath": "$.Error.Cause"
+    },
+    "EndSuccess": {
+      "Comment": "End the Flow with a success sate.",
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}

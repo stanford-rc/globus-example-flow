@@ -1,0 +1,99 @@
+{
+    "$comment": "This Input Schema is part of A Example Pipeline for Unattended Pipelines, Data Transfer, and Computation Using Globus.  https://github.com/stanford-rc/globus-example-flow/tree/flow",
+    "type": "object",
+    "properties": {
+        "source_data": {
+            "type": "object",
+            "title": "Where is the source data to checksum?",
+            "description": "A collection and path to a directory",
+            "format": "globus-collection",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "default": "722751ce-1264-43b8-9160-a9272f746d78"
+                },
+                "path": {
+                    "type": "string",
+                    "default": "/5GB-in-small-files/"
+                }
+            },
+            "required": [
+                "id",
+                "path"
+            ],
+            "additionalProperties": false    
+        },
+        "cluster_temp": {
+            "type": "object",
+            "title": "Where should the data be stored for processing?",
+            "description": "A collection and path to a directory",
+            "format": "globus-collection",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "default": "3257fc54-9071-42fa-88ca-6097b2679b9a"
+                },
+                "path": {
+                    "type": "string",
+                    "default": "/ruthm/akkornel/"
+                }
+            },
+            "required": [
+                "id",
+                "path"
+            ],
+            "additionalProperties": false    
+        },
+        "cluster_compute_endpoint": {
+            "type": "string",
+            "format": "uuid",
+            "title": "What is the unique ID of the cluster's Globus Compute endpoint?",
+            "description": "This must match the location of cluster data storage!"
+        },
+        "function_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "What is the unique ID of the function to run?",
+            "description": "The function must have been uploaded using the same Python version that your Compute Endpoint is running."
+        },
+        "destination": {
+            "type": "object",
+            "title": "Where should the results be delivered?",
+            "description": "A collection and path to a directory",
+            "format": "globus-collection",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "default": "43809e90-75e7-11ef-b6c0-6d7d1acfb36d"
+                },
+                "path": {
+                    "type": "string",
+                    "default": "/Users/akkornel/Downloads/"
+                }
+            },
+            "required": [
+                "id",
+                "path"
+            ],
+            "additionalProperties": false    
+        },
+        "path_prefix": {
+            "type": "string",
+            "title": "What prefix should be used in directories we create?",
+            "description": "Temporary and results directories will start with this string, and end with the Flow Run's unique ID.",
+            "const": "karl-demo"
+        }
+    },
+    "required": [
+        "source_data",
+        "cluster_temp",
+        "cluster_compute_endpoint",
+        "function_id",
+        "destination",
+        "path_prefix"
+    ],
+    "additionalProperties": false
+}

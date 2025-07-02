@@ -172,6 +172,87 @@ To summarize:
 
 * The other parameters can be left alone.
 
+## The Flow Definition
+
+A Globus Flow is a state machine.  Other than the start and end states, each
+state does some sort of work: It might set some variables, take an action (like
+"create directory"), or make a decision about what to do next.  Each state has
+access to the information from the Input Schema, information produced by
+already-executed states, and information about the Run itself (like the Run's
+unique ID).  [Read more about authoring
+Flows](https://docs.globus.org/api/flows/authoring-flows/).
+
+The following diagram shows the Flow in graphic form.  You may wish to open the
+image separately to view it at full size.
+
+![A diagram showing the states of the Flow, and transitions from state to state.](docs/flow.png?raw=true)
+
+(The diagram was produced using the [Flows
+IDE](https://globus.github.io/flows-ide/), version 1.4.7-beta.  To reproduce
+the diagram, open the Flows IDE and paste in the contents of
+[definition.json](definition.json?raw=true).)
+
+The Flow has 15 states, two of which (`EndFailure` and `EndSuccess`) are
+terminal.  `Compute_Paths` is the starting state.  The states are split into
+several categories:
+
+1. **Compute Paths**: This is the `Compute_Paths` and
+   `Compute_Function_Arguments` states.  This takes our inputs and computes all
+   of the different paths for where files will be stored.
+
+2. **Make Directories**: This is `MakeDir_Compute`,
+   `MakeDir_Compute_Input`, `MakeDir_Compute_Output`, and
+   `MakeDir_Results`, to create directories for temporary storage and
+   results storage.
+
+3. **Copy Inputs**: This is `Copy_Inputs_To_Compute`, a simple Transfer.
+
+4. **Compute**: This is `Do_Compute`, which calls Globus Compute to do
+   the checksumming.
+
+5. **Copy Results**: This is `Copy_Results_To_Dest`, another simple Transfer.
+
+6. **Clean Up**: This is `Cleanup_Compute`, which is always run; and
+   `Cleanup_Results`, which is only run if some part of the Flow fails.
+
+Normal operation proceeds from state to state in the order listed above.  Every
+state (except for the `End` states) catches exceptions, transitioning to an
+approriate `Cleanup` state depending on the nature of the exception:
+`Cleanup_Results` on an exception in any state from Categories 1 through 4;
+`Cleanup_Compute` is run regardless.
+
+The Flow ends in the `End` state, which goes to either `EndFailure` or
+`EndSuccess`, depending on if there was a problem with the Run.
+
+Special notice must be given to the `Compute_Function_Arguments` state.  The
+Compute Function needs to know the absolute path to the `cluster_temp` storage.
+Globus Collections can have base paths, so to convert a Collection path into an
+absolute path, you typically need to add a prefix.  The
+`Compute_Function_Arguments` state is responsible for adding this prefix.
+
+**If you change `cluster_temp` in the Input Schema, you must also change the
+definition of `in_dir` and `out_dir` in the `Compute_Function_Arguments` state.**
+
+Take the current Flow Definition as an example.  In the current Flow
+Definition, `cluster_temp` points to [SRCC SCG Lab
+Storage](https://app.globus.org/file-manager/collections/3257fc54-9071-42fa-88ca-6097b2679b9a/overview).
+The base path of this Mapped Collection is `/labs`, so to get an absolute path
+that works on ths cluster, you must start with `/labs` and then add the
+`cluster_temp.path`.  So, that is what happens in the
+`Compute_Function_Arguments` state.
+
+To Summarize:
+
+* Most of the Flow states will work in your situation, with one exception.
+
+* The `Compute_Function_Arguments` state will need to be customized to your
+  cluster.
+
+* If you are using this Flow with [SRCC SCG Lab
+  Storage](https://app.globus.org/file-manager/collections/3257fc54-9071-42fa-88ca-6097b2679b9a/overview),
+  then you do not need to change anything in the Flow Definition.  Though you
+  will need to specify a different `cluster_temp.path`.
+
 # Copyright, Licensing, and Contributions
 
 The contents of this repository are © 2025 The Board of Trustees of the Leland

@@ -106,6 +106,72 @@ scheduler, allowing the user to do work without needing to connect to the login
 node.  User authentication is handled at all stages by Globus Auth, in
 connection with your local Identity Provider.
 
+# Parameters and Customization
+
+## The Input Schema
+
+The descriptions above leave some open questions.  "What is the raw data?"
+"What work is being done?"  "Where do the results go?"  These questions are
+answered by the Input Schema.
+
+The [input schema](schema.json) lists all of the variables that must be
+provided when a Run is started.  You need to provide three Globus Collections
+(each having a UUID and a path), a Globus Compute Endpoint UUID, and a Globus
+Compute Function UUID.  This section talks about all these inputs.
+
+The first Collection is `source_data`.  This points to the path
+`/5GB-in-small-files/` in the [ESnet CERN DTN (Anonymous read-only
+testing)](https://app.globus.org/file-manager/collections/722751ce-1264-43b8-9160-a9272f746d78/overview)
+Collection.  This path contains 1,875 files and 651 directories, and takes
+approximately 4.66 GiB of space on disk.  This dataset was chosen as one that
+does not take up much space, and balances Globus' parallelization ability with
+the latency that comes from small files (average file size is 2.55 MiB).
+
+The `source_data` is available for anyone to access, and should not need to be
+changed.
+
+The second Collection is `cluster_temp`.  This points to the path
+`/ruthm/akkornel` on [SRCC SCG Lab Storage](https://app.globus.org/file-manager/collections/3257fc54-9071-42fa-88ca-6097b2679b9a/overview), which points to `/labs` in the [Stanford SCG Bioinformatics
+Cluster](https://login.scg.stanford.edu).  If you have an account on SCG, then
+you should only need to change `cluster_temp.path` to point to your own path;
+it should be OK to change this during Flow submission, so you should not need
+to change the Input Schema.
+
+*If you want to point `cluster_temp` to a different cluster, you will need to
+also change the Flow Definition.*  That will be described in the next section.
+
+The final Collection is `destination`, which points to Karl's work laptop.
+This should definitely be changed.  You can either change the Input Schema, or
+you can change the values during Flow submission.
+
+Next is `cluster_compute_endpoint`.  This is the UUID of the Globus Compute
+Endpoint that will be running the checksum job.  See the *Compute Endpoint*
+section for more information.
+
+Next is `function_id`, which is the UUID of the Globus Compute Function that
+will be doing the checksum work.  The [function.py](function.py) script
+can be used to register this.  *Make sure you use the same Python version to
+register the script, as you use to run the Compute Endpoint.*
+
+Finally, the Input Schema contains the parameter `path_prefix`.  This string is
+added to the directories that the Flow creates, along with the Run's unique ID,
+and helps to ensure uniqueness.  The parameter is set to a fixed value in the
+Input Schema, so it should be left alone.
+
+To summarize:
+
+* Everyone should change the `destination`, either in the Input Schema or
+  during Flow submission, to point to their own destination.
+
+* SCG users could customize `cluster_temp.path` to their own lab space.
+  Non-SCG users will need to change `cluster_temp` completely, and will also
+  need to change the Flow Definition.
+
+* Everyone should change `cluster_compute_endpoint` and `function_id` during
+  Flow submission, pointing to their own Compute Endpoint and Compute Function.
+
+* The other parameters can be left alone.
+
 # Copyright, Licensing, and Contributions
 
 The contents of this repository are © 2025 The Board of Trustees of the Leland

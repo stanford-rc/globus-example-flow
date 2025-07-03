@@ -43,6 +43,241 @@ Cluster](https://login.scg.stanford.edu).  If you want the Flow to work with
 your cluster, you will need to adjust it.  The Function code should be portable
 across clusters.
 
+# How to Use (on SCG)
+
+For reasons that will be explained later, the Globus Flow used in this demo
+must be customized for the environment that will be running Globus Compute.
+
+We begin with an example that will work for folks who are using the [Stanford
+SCG Bioinformatics Cluster](https://login.scg.stanford.edu).  The
+publicly-available Flow Definition is designed for use with SCG, and so users
+only need to register the demo Compute Function and start a Compute Endpoint.
+You can then proceed with running the Flow.
+
+All of this will be done within a Python virtualenv.  The steps are:
+
+1. Create a Python Virtualenv
+
+2. Register the Function with Globus Compute
+
+3. Configure a Globus Compute Endpoint
+
+4. Run the Flow
+
+NOTE: On SCG, Python versions are provided through Lmod modules.  Every example
+assumes that you have already loaded the `python/3.11.1` module.
+
+## Create a Python Virtualenv
+
+To begin, we need a Python virtualenv on the cluster.  The virtualenv needs the
+`globus-compute-sdk` package (to support Function registration), and the
+`globus-compute-endpoint` package (for the Globus Compute Endpoint software).
+
+This asciicast demonstrates the creation of the venv and the installation of the
+packages:
+
+[![asciicast](https://asciinema.org/a/725655.svg)](https://asciinema.org/a/725655)
+
+Here are the commands to run, to reproduce the demo in your own session:
+
+```
+# Create a venv for our Compute Endpoint and Compute Function
+mkdir globus_compute_endpoint
+/scg/apps/software/python/3.11.1/bin/python -m venv --upgrade-deps globus_compute_endpoint
+
+# Activate the venv, and confirm `python` is pointing to the venv's Python.
+cd globus_compute_endpoint
+. bin/activate
+which python
+python -V
+
+# Install the Globus Compute SDK and the Globus Compute Endpoint packages
+pip install globus-compute-sdk globus-compute-endpoint
+```
+
+The venv is now ready to use.
+
+## Register the Function with Globus Compute
+
+With our venv ready, the first thing to do is to register the Function.  This
+asciicast demonstrates the registration of the Function:
+
+[![asciicast](https://asciinema.org/a/725656.svg)](https://asciinema.org/a/725656)
+
+The demonstration assumes that you just logged in to SCG, and that you need to
+re-activate the venv.  Here are the commands to run, to reproduce the demo in
+your own session:
+
+```
+# If needed, activate the venv
+cd globus_compute_endpoint
+. bin/activate
+which python
+python -V
+
+# Download the `function.py` script from the GitHub repo.
+curl -L -o function.py https://github.com/stanford-rc/globus-example-flow/raw/refs/heads/flow/function.py
+
+# Run the script, with instructions to register the Compute Function.
+# This might prompt you to authenticate.
+python function.py register
+```
+
+Once the `function.py` script completes, you may delete the script.  Functions
+are not tied to individual users (though they are tied to a particular Python
+version), and they may be used multiple times.
+
+In the above example, the Compute Function has been registered and assigned
+UUID `e381b154-abe5-48d2-956f-4c61ee02adf0`.  We will need this UUID when it is
+time to run the Flow.
+
+## Configure a Globus Compute Endpoint
+
+Next, we configure the Globus Compute Endpoint.  This involves telling the
+Compute Endpoint about our job scheduler, and how jobs should be submitted.
+
+This asciicast demonstrates the creation and configuration of the Compute
+Endpoint:
+
+[![asciicast](https://asciinema.org/a/725819.svg)](https://asciinema.org/a/725819)
+
+The demonstration assumes that you just logged in to SCG, and that you are a
+member of the Full-Tier `ruthm` Lab.  You should change the SLURM account to
+your own PI's SUNetID; and if your Lab is a Free-Tier Lab, you should change
+the SLURM partition from `batch` to `nih_s10`.
+
+The demo stores the Compute Endpoint configuration in the
+`globus_compute_demo` directory.  Normally configuration is stored in the
+hidden `.globus_compute` directory in your home directory; the explicit
+configuration path makes cleanup easier.
+
+Here are the commands to run, to reproduce the demo in your own session:
+
+```
+# If needed, activate the venv
+cd globus_compute_endpoint
+. bin/activate
+which python
+python -V
+
+# Create a new Compute Endpoint
+globus-compute-endpoint \
+--config-dir=/home/akkornel/globus_compute_demo/config \
+configure --display-name "Globus Flow Demo on SCG" globus_flow_demo
+
+# Edit the file at path `config/globus_flow_demo/config.yaml`,
+# configuring the provider as follows:
+
+provider:
+  type: SlurmProvider
+  partition: batch
+  account: ruthm
+  launcher:
+    type: SrunLauncher
+
+# After saving the `config.yaml` file, start the Endpoint
+globus-compute-endpoint --config-dir=/home/akkornel/globus_compute_demo/config start globus_flow_demo
+
+# List all endpoints, confirming that the Endpoint is started
+globus-compute-endpoint --config-dir=/home/akkornel/globus_compute_demo/config list
+```
+
+In the above example, the Compute Endpoint has been registered and assigned
+UUID `b72ee151-a5d9-4cfc-97b3-86e0664730b2`.
+
+## Run the Flow
+
+With the Function registered and Compute Engine running, we may now run the
+Flow!
+
+This asciicast demonstrates running the Flow:
+
+[![asciicast](https://asciinema.org/a/725821.svg)](https://asciinema.org/a/725821)
+
+In the above example, we see…
+
+* The Compute Endpoint is still running, and we have its UUID
+  (`b72ee151-a5d9-4cfc-97b3-86e0664730b2`).
+
+* We remembered the UUID of the Compute Function that we registered (it is
+  `e381b154-abe5-48d2-956f-4c61ee02adf0`).
+
+* On the cluster, we are storing files temporarily at path `/ruthm/akkornel` on
+  the [SRCC SCG Lab
+  Storage](https://app.globus.org/file-manager/collections/3257fc54-9071-42fa-88ca-6097b2679b9a/overview)
+  Collection.  The Collection's UUID is part of the Flow Definition, and so is
+  not specified on the command line.
+
+* We are sending the results to a path in Karl's home directory in the [SRCC SCG
+  Home](https://app.globus.org/file-manager/collections/2e23906b-0608-45bb-b344-393b8706e862/overview)
+  Collection.  The Collection's UUID is `2e23906b-0608-45bb-b344-393b8706e862`.
+
+All that's left is to run the script!  The script logs us in to Globus,
+validates the information we provided, asks for final confirmation (and a label
+for the Run), and then runs the Flow.
+
+Once the Flow run is submitted, the script shows us the progress of the Run's
+progression through each state of the Flow.  (Read the section on *The Flow
+Definition* for more information about the Flow's states.)
+
+Once the Run is complete, the script exits, and we can see the checksums file
+has been uploaded.
+
+Meanwhile, monitoring the SLURM queue shows the Globus Compute job in queue and
+running, as we can see in this asciicast:
+
+[![asciicast](https://asciinema.org/a/725822.svg)](https://asciinema.org/a/725822)
+
+Here are the commands to run, to reproduce the demo in your own session:
+
+```
+# If needed, activate the venv
+cd globus_compute_endpoint
+. bin/activate
+which python
+python -V
+
+# Download the script that will submit the Flow run
+# Also, install the Python packages needed by the script
+pip install globus-sdk click
+curl -L -o run_and_monitor.py https://github.com/stanford-rc/globus-example-flow/raw/refs/heads/flow/run_and_monitor.py
+
+# Make a directory to hold the results of the Compute Function
+mkdir results
+
+# Confirm the Compute Endpoint is still running
+globus-compute-endpoint --config-dir /home/akkornel/globus_compute_demo/config list 
+
+# Run the Flow, and monitor the Run.  Note that you need to provide:
+# * A path on SCG Lab storage, to hold the data temporarily
+# * A Collecton UUID and path to receive the results
+# * The UUID of your Compute Endpoint
+# * The UUID of your Compute Function
+python run_and_monitor.py
+--cluster-temp-path /ruthm/akkornel/ \
+--destination-uuid 2e23906b-0608-45bb-b344-393b8706e862 \
+--destination-path /akkornel/globus_compute_endpoint/results/ \
+b72ee151-a5d9-4cfc-97b3-86e0664730b2 \
+e381b154-abe5-48d2-956f-4c61ee02adf0
+
+# Go into the results directory, and confirm the Run created a directory
+cd results
+ls
+
+# Go into the directory created by the Run
+cd karl-demo*
+
+# Confirm we have a checksums file, and examine it
+ls
+head checksums.txt
+```
+
+With the above steps, an SCG user should be able to run this demo themselves!
+
+If someone not on SCG wanted to run the demo, they would be required to update
+at least the Flow Definition.  So, before giving an example of that, it is
+necessary to explain the environment which the demo uses, and how to modify it.
+
 # The Environment
 
 The scripts assume that you have the following environment:

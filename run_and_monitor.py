@@ -209,37 +209,37 @@ click_cmd.params.append(click.Option(
 click_cmd.params.append(click.Option(
     param_decls=['--source-uuid'],
     type=click.UUID,
-    help='The unique ID of the source data',
+    help='The unique ID of the source data Globus Collection',
     default=default_source_data.uuid,
 ))
 click_cmd.params.append(click.Option(
     param_decls=['--source-path'],
     type=pathlib.PurePosixPath,
-    help='The path to the source data',
+    help='The path to the source data on the source data Globus Collection',
     default=default_source_data.path,
 ))
 click_cmd.params.append(click.Option(
     param_decls=['--cluster-temp-uuid'],
     type=click.UUID,
-    help='The unique ID of the source data',
+    help='The unique ID of the cluster Collection',
     default=default_cluster_temp.uuid,
 ))
 click_cmd.params.append(click.Option(
     param_decls=['--cluster-temp-path'],
     type=pathlib.PurePosixPath,
-    help='The path to the source data',
+    help='The path to a temporary storage location on the cluster Collection',
     default=default_cluster_temp.path,
 ))
 click_cmd.params.append(click.Option(
     param_decls=['--destination-uuid'],
     type=click.UUID,
-    help='The unique ID of the source data',
+    help='The unique ID of the destination Collection',
     default=default_destination.uuid,
 ))
 click_cmd.params.append(click.Option(
     param_decls=['--destination-path'],
     type=pathlib.PurePosixPath,
-    help='The path to the source data',
+    help='The path to store results on the destination Collection',
     default=default_destination.path,
 ))
 click_cmd.params.append(click.Argument(

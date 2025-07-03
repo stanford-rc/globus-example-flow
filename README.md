@@ -24,7 +24,8 @@ environment, even if "compute environment" means a high-powered workstation.
 
 The "compute" performed in the demonstration is to checksum the contents of a
 directory tree, and output a text file containing file names and their
-checksums.
+checksums.  An example `checksums.txt` file [is available to view in the
+repository](checksums.example.txt).
 
 Manual intervention is required only to start the Flow (the pipeline); after
 that it runs unattended.  The Flow defininition is written in [Amazon States

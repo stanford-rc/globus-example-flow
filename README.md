@@ -1,5 +1,12 @@
 # A Example Pipeline for Unattended Pipelines, Data Transfer, and Computation Using Globus
 
+For those who want to watch something before they read something, here is a
+video of this demo in action.  Note that there is no audio, just video.
+
+[![A video of the demo that is described in the following paragraphs](https://img.youtube.com/vi/CMPxcfkjvUo/0.jpg)](https://www.youtube.com/watch?v=CMPxcfkjvUo)
+
+The original recording is also available [from Google Drive](https://drive.google.com/file/d/1YvjnOPxUt7kQfCT0D8oUZhlbxonmQZHp/view?usp=sharing).
+
 [Globus](https://globus.org) is a platform for *high-speed, unattended data
 transfer* between environments.  An "environment" can be anything, from a
 high-performance compute cluster, to cloud services like Amazon S3 and Google

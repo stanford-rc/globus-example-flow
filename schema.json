@@ -67,7 +67,7 @@
                 "id": {
                     "type": "string",
                     "format": "uuid",
-                    "default": "43809e90-75e7-11ef-b6c0-6d7d1acfb36d"
+                    "default": "e75389f3-6e71-11f0-b2d2-0e9afee528db"
                 },
                 "path": {
                     "type": "string",

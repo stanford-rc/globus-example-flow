@@ -15,8 +15,8 @@
 # /// script
 # requires-python = ">=3.8"
 # dependencies = [
-#   "click>=8.2.1",
-#   "globus-sdk>=3.56.0",
+#   "click >=8.2.1",
+#   "globus-sdk <4.0, >=3.56.0 ",
 # ]
 # ///
 

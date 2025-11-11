@@ -90,6 +90,7 @@ import uuid
 # Now do PyPi imports
 import click
 import globus_sdk
+import globus_sdk.gare
 import globus_sdk.scopes
 
 # Some constants
@@ -309,18 +310,33 @@ def lookup_collection(
 
 def lookup_path(
     target: GlobusCollection,
-) -> bool | None:
+) -> bool | list[globus_sdk.gare.GARE] | None:
     try:
+        stat_results: \
+            globus_sdk.GlobusHTTPResponse | \
+            list[globus_sdk.gare.GARE] | \
+            None
         stat_results = globus_transfer.operation_stat(
             target.uuid,
             path=str(target.path),
         )
+    except globus_sdk.GlobusAPIError as e:
+        # For an API error, we might need a re-auth
+        if globus_sdk.gare.is_gare(e):
+            click.secho('RE-AUTH REQUIRED', fg="yellow", bold=True)
+            stat_results = globus_sdk.gare.to_gares([e])
+        else:
+            click.secho('FAILED!', fg="red", bold=True)
+            click.echo(str(e))
+            stat_results = None
     except Exception as e:
         click.secho('FAILED!', fg="red", bold=True)
         click.echo(str(e))
         stat_results = None
     if stat_results is None:
         return None
+    elif isinstance(stat_results, list):
+        return stat_results
     elif stat_results['type'] == 'dir':
         return True
     else:
@@ -556,13 +572,22 @@ def main(**kwargs) -> None:
     globus_app.login()
 
     # Check paths
+    additional_auth: list[globus_sdk.gare.GARE] = list()
     for collection in (source_data, cluster_temp, destination):
         click.secho(f"Checking Path {collection.path}… ", nl=False)
-        path_lookup_results = lookup_path(collection)
-        if path_lookup_results is not None:
-            if path_lookup_results is True:
-                click.secho('OK! ', fg='green')
-                valid_paths += 1
+        while True:
+            path_lookup_results = lookup_path(collection)
+            if isinstance(path_lookup_results, list):
+                click.echo('Additional Globus Auth is required…')
+                globus_app.login(
+                    auth_params=path_lookup_results[0].authorization_parameters,
+                )
+                continue
+            if path_lookup_results is not None:
+                if path_lookup_results is True:
+                    click.secho('OK! ', fg='green')
+                    valid_paths += 1
+            break
 
     # Final check before user confirmation
     if len(display_names) < 3:
@@ -610,33 +635,54 @@ DESTINATION:
         click.echo(f"Flow Label: {flow_label}")
 
     # Run the flow!
-    click.echo('Submitting Flow run… ', nl=False)
-    try:
-        submit_result = globus_flow.run_flow(
-            label=flow_label,
-            tags=list(TAGS | {'karl demo'}),
-            body={
-                'source_data': {
-                    'id': source_data.uuid,
-                    'path': str(source_data.path),
+    while True:
+        click.echo('Submitting Flow run… ', nl=False)
+        try:
+            submit_result: \
+                globus_sdk.GlobusHTTPResponse | \
+                list[globus_sdk.gare.GARE] | \
+                None
+            submit_result = globus_flow.run_flow(
+                label=flow_label,
+                tags=list(TAGS | {'karl demo'}),
+                body={
+                    'source_data': {
+                        'id': source_data.uuid,
+                        'path': str(source_data.path),
+                    },
+                    'cluster_temp': {
+                        'id': cluster_temp.uuid,
+                        'path': str(cluster_temp.path),
+                    },
+                    'destination': {
+                        'id': destination.uuid,
+                        'path': str(destination.path),
+                    },
+                    'cluster_compute_endpoint': cluster_compute_endpoint,
+                    'function_id': function_id,
+                    'path_prefix': path_prefix,
                 },
-                'cluster_temp': {
-                    'id': cluster_temp.uuid,
-                    'path': str(cluster_temp.path),
-                },
-                'destination': {
-                    'id': destination.uuid,
-                    'path': str(destination.path),
-                },
-                'cluster_compute_endpoint': cluster_compute_endpoint,
-                'function_id': function_id,
-                'path_prefix': path_prefix,
-            },
-        )
-    except Exception as e:
-        click.secho('FAILED!', fg="red", bold=True)
-        click.echo(str(e))
-        submit_result = None
+            )
+        except globus_sdk.GlobusAPIError as e:
+            # For an API error, we might need a re-auth
+            if globus_sdk.gare.is_gare(e):
+                click.secho('RE-AUTH REQUIRED', fg="yellow", bold=True)
+                submit_result = globus_sdk.gare.to_gares([e])
+            else:
+                click.secho('FAILED!', fg="red", bold=True)
+                click.echo(str(e))
+                submit_result = None
+        except Exception as e:
+            click.secho('FAILED!', fg="red", bold=True)
+            click.echo(str(e))
+            submit_result = None
+        if isinstance(submit_result, list):
+            click.echo('Additional Globus Auth is required…')
+            globus_app.login(
+                auth_params=submit_result[0].authorization_parameters,
+            )
+            continue
+        break
     if submit_result is None:
         sys.exit(1)
     run_id = uuid.UUID(submit_result['run_id'])

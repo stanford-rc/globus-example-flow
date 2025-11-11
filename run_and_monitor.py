@@ -125,7 +125,7 @@ globus_flow = globus_sdk.SpecificFlowClient(
     FLOW_UUID,
     app=globus_app,
 )
-globus_compute = globus_sdk.ComputeClient(app=globus_app)
+globus_compute = globus_sdk.ComputeClientV2(app=globus_app)
 globus_transfer = globus_sdk.TransferClient(app=globus_app)
 
 # All of the above instances added their default scopes to the Globus App

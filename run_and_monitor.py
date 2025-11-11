@@ -79,6 +79,7 @@
 import dataclasses
 import datetime
 import enum
+import os
 import pathlib
 import sys
 import time
@@ -99,6 +100,8 @@ CLIENT_ID: uuid.UUID = uuid.UUID('e9e6822d-a941-4bd7-8a8c-602bee1da858')
 
 FLOW_UUID: uuid.UUID = uuid.UUID('08cc20ad-a96e-445a-8418-c569bdc7117e')
 '''The unique ID of the Flow that we are going to run
+
+This may be overridden by setting the EXAMPLE_FLOW_UUID environment variable.
 '''
 
 TAGS: set[str] = {
@@ -108,6 +111,9 @@ TAGS: set[str] = {
 LOG_SLEEP: float = 10.0
 '''How long do we sleep between log updates?
 '''
+
+if 'EXAMPLE_FLOW_UUID' in os.environ:
+    FLOW_UUID = uuid.UUID(os.environ['EXAMPLE_FLOW_UUID'])
 
 # Our Globus clients
 globus_app = globus_sdk.UserApp(

@@ -296,7 +296,7 @@ def lookup_collection(
     # For GCSv5 non-HA Mapped Collections, we have a scope to add.
     if (
         collection_lookup['entity_type'] == 'GCSv5_mapped_collection' and
-        collection_lookup['high_assurance'] is False
+        is_ha is False
     ):
         globus_transfer.add_app_data_access_scope(target.uuid)
 
